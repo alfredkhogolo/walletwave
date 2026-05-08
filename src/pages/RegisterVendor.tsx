@@ -2,14 +2,29 @@ import { motion } from 'motion/react';
 import { Store, Phone, MapPin, CheckCircle2, ArrowRight } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useVendors } from '../services/store';
 
 export default function RegisterVendor() {
   const [step, setStep] = useState(1);
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [fee, setFee] = useState(1500);
   const navigate = useNavigate();
+  const { addVendor } = useVendors();
 
   const handleNext = () => {
-    if (step < 3) setStep(step + 1);
-    else navigate('/vendor');
+    if (step < 3) {
+      setStep(step + 1);
+    } else {
+      addVendor({
+        name,
+        logo: name.substring(0, 2).toUpperCase(),
+        deliveryFee: fee,
+        category: 'Market Shop',
+        deliveryTime: '2-4 Hours'
+      });
+      navigate('/vendor');
+    }
   };
 
   return (
@@ -45,6 +60,8 @@ export default function RegisterVendor() {
                 <label className="text-[10px] font-bold text-slate-400 uppercase">Shop Name</label>
                 <input 
                   type="text" 
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Blantyre Spices"
                   className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-blue-600 font-medium"
                 />
@@ -54,6 +71,8 @@ export default function RegisterVendor() {
                 <div className="relative">
                   <input 
                     type="tel" 
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
                     placeholder="088..."
                     className="w-full bg-slate-50 border-none rounded-xl py-3 pl-10 pr-4 focus:ring-2 focus:ring-blue-600 font-medium"
                   />
@@ -84,6 +103,8 @@ export default function RegisterVendor() {
                 <label className="text-[10px] font-bold text-slate-400 uppercase">Average Delivery Price (MWK)</label>
                 <input 
                   type="number" 
+                  value={fee}
+                  onChange={(e) => setFee(parseInt(e.target.value) || 0)}
                   placeholder="1500"
                   className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-blue-600 font-medium"
                 />

@@ -1,62 +1,34 @@
 import { motion } from 'motion/react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, ShoppingCart, Phone, ShieldCheck, MapPin, Clock, Star, Send } from 'lucide-react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { ChevronLeft, ShoppingCart, Phone, ShieldCheck, MapPin, Clock, Star, Send, MessageSquare } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { useCart } from '../services/store';
-
-const MOCK_PRODUCTS = [
-  { 
-    id: '1', 
-    name: 'Fresh Maize (50kg)', 
-    price: 12500, 
-    vendor: 'Chambo Farms', 
-    category: 'farming', 
-    image: 'https://images.unsplash.com/photo-1551754655-cd27e38d2076?auto=format&fit=crop&q=80&w=800', 
-    verified: true, 
-    description: 'High-quality freshly harvested maize from Salima. Perfect for local processing or direct sale.', 
-    stock: 15, 
-    rating: 4.8,
-    deliveryPrice: 1500,
-    deliveryHours: '2-4 hours',
-    telegram: 'chambofarms_mw'
-  },
-  { 
-    id: '2', 
-    name: 'Airtel/Mpamba Kiosk', 
-    price: 450000, 
-    vendor: 'Smart Connect', 
-    category: 'electronics', 
-    image: 'https://images.unsplash.com/photo-1556742049-dfbd24439199?auto=format&fit=crop&q=80&w=800', 
-    verified: true, 
-    description: 'Standard size metal kiosk, painted and ready for use. Includes secure locking mechanism.', 
-    stock: 2, 
-    rating: 5.0,
-    deliveryPrice: 5000,
-    deliveryHours: '24-48 hours',
-    telegram: 'smartconnect_mw'
-  },
-  { 
-    id: '3', 
-    name: 'Chitenje Fabric', 
-    price: 8500, 
-    vendor: 'Blantyre Text', 
-    category: 'fashion', 
-    image: 'https://images.unsplash.com/photo-1528459801416-a9e53bbf4e17?auto=format&fit=crop&q=80&w=800', 
-    verified: false, 
-    description: 'Beautiful traditional patterns, 6 yards. High quality cotton.', 
-    stock: 50, 
-    rating: 4.2,
-    deliveryPrice: 1000,
-    deliveryHours: '1-2 hours',
-    telegram: 'bttextiles'
-  },
-];
+import { useCart, useProducts, useVendors, useAuth } from '../services/store';
+import React, { useState } from 'react';
 
 export default function ProductDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { add } = useCart();
-  const product = MOCK_PRODUCTS.find(p => p.id === id) || MOCK_PRODUCTS[0];
+  const { products } = useProducts();
+  const { vendors, addComment } = useVendors();
+  const { user, isLoggedIn } = useAuth();
+  const [commentText, setCommentText] = useState('');
+
+  const product = products.find(p => p.id === id) || products[0];
+  const vendor = vendors.find(v => v.id === product.vendorId) || vendors.find(v => v.name === product.vendor);
+  const comments = vendor?.comments || [];
+
+  const handleAddComment = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!commentText.trim() || !vendor) return;
+    
+    addComment(vendor.id, {
+      user: user?.name || 'Guest User',
+      text: commentText,
+      date: new Date().toISOString()
+    });
+    setCommentText('');
+  };
 
   return (
     <motion.div 
@@ -131,14 +103,20 @@ export default function ProductDetails() {
           <div className="pt-4 border-t border-slate-100 space-y-3">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Connect with Vendor</p>
             <div className="flex gap-2">
+              <button 
+                onClick={() => navigate('/inbox')}
+                className="flex-1 bg-blue-600 text-white h-12 rounded-xl flex items-center justify-center gap-2 font-bold text-sm shadow-md shadow-blue-100 active:scale-95 transition-transform"
+              >
+                <MessageSquare size={18} />
+                Chat Internally
+              </button>
               <a 
                 href={`https://t.me/${product.telegram}`}
                 target="_blank"
                 rel="noreferrer"
-                className="flex-1 bg-[#0088cc] text-white h-12 rounded-xl flex items-center justify-center gap-2 font-bold text-sm shadow-md shadow-blue-100 active:scale-95 transition-transform"
+                className="w-12 h-12 bg-[#0088cc] text-white rounded-xl flex items-center justify-center shadow-md shadow-blue-100 active:scale-95 transition-transform"
               >
                 <Send size={18} />
-                Chat on Telegram
               </a>
               <a 
                 href="tel:+265888000000"
@@ -148,6 +126,84 @@ export default function ProductDetails() {
               </a>
             </div>
           </div>
+
+          {/* Comments Section */}
+          <div className="pt-6 border-t border-slate-100 space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="font-black text-slate-800 uppercase tracking-tighter">Business Reviews</h3>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{comments.length} Comments</span>
+            </div>
+
+            <form onSubmit={handleAddComment} className="space-y-3">
+              <textarea 
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                placeholder={isLoggedIn ? "Write a comment about this vendor..." : "Please sign in to comment"}
+                disabled={!isLoggedIn}
+                className="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm font-medium focus:ring-2 focus:ring-blue-600 min-h-[100px] disabled:opacity-50"
+              />
+              <button 
+                type="submit"
+                disabled={!isLoggedIn || !commentText.trim()}
+                className="bg-slate-900 text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-transform disabled:opacity-50"
+              >
+                Post Comment
+              </button>
+            </form>
+
+            <div className="space-y-4">
+              {comments.map((comment: any) => (
+                <div key={comment.id} className="bg-slate-50/50 p-4 rounded-2xl space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-slate-200 rounded-full flex items-center justify-center text-[8px] font-black">
+                        {comment.user.substring(0, 2).toUpperCase()}
+                      </div>
+                      <p className="text-[10px] font-black text-slate-800">{comment.user}</p>
+                    </div>
+                    <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">
+                      {new Date(comment.date).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-600 font-medium leading-relaxed">{comment.text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Similar Products */}
+      <div className="mt-12 space-y-4">
+        <h3 className="font-black text-slate-800 uppercase tracking-tighter text-lg">Similarly Listed Items</h3>
+        <div className="grid grid-cols-2 gap-3">
+          {products
+            .filter(p => p.category === product.category && p.id !== product.id)
+            .slice(0, 4)
+            .map(item => (
+              <Link 
+                key={item.id} 
+                to={`/product/${item.id}`}
+                className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm active:scale-95 transition-transform"
+              >
+                <div className="aspect-square relative">
+                  <img src={item.image} className="w-full h-full object-cover" />
+                  <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg">
+                    <p className="text-[9px] font-black text-slate-800">MWK {item.price.toLocaleString()}</p>
+                  </div>
+                </div>
+                <div className="p-3">
+                  <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-tighter truncate">{item.name}</h4>
+                  <p className="text-[8px] font-bold text-blue-600 uppercase tracking-widest">{item.vendor}</p>
+                </div>
+              </Link>
+            ))
+          }
+          {products.filter(p => p.category === product.category && p.id !== product.id).length === 0 && (
+            <div className="col-span-2 bg-slate-50 border border-dotted border-slate-200 rounded-3xl p-8 text-center">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No similar items found in this category</p>
+            </div>
+          )}
         </div>
       </div>
 

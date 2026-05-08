@@ -1,14 +1,19 @@
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Home as HomeIcon, Search, ShoppingCart, User } from 'lucide-react';
+import { Home as HomeIcon, Search as SearchIcon, ShoppingCart, User } from 'lucide-react';
 import Home from './pages/Home';
 import ProductDetails from './pages/ProductDetails';
 import Cart from './pages/Cart';
 import VendorDashboard from './pages/VendorDashboard';
+import SearchPage from './pages/SearchPage';
+import CategoryPage from './pages/CategoryPage';
 import Header from './components/layout/Header';
 import { cn } from './lib/utils';
 
 import RegisterVendor from './pages/RegisterVendor';
+import Inbox from './pages/Inbox';
+import { MessageSquare } from 'lucide-react';
+import AIHelper from './components/AIHelper';
 
 function App() {
   return (
@@ -23,14 +28,20 @@ function App() {
               <Route path="/cart" element={<Cart />} />
               <Route path="/vendor" element={<VendorDashboard />} />
               <Route path="/register-vendor" element={<RegisterVendor />} />
+              <Route path="/search" element={<SearchPage />} />
+              <Route path="/category/:id" element={<CategoryPage />} />
+              <Route path="/inbox" element={<Inbox />} />
             </Routes>
           </AnimatePresence>
         </main>
         
+        <AIHelper />
+        
         {/* Mobile Navigation Bar */}
         <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-3 flex justify-between items-center md:hidden z-50">
           <MobileNavItem Icon={HomeIcon} label="Home" href="/" />
-          <MobileNavItem Icon={Search} label="Search" href="/search" />
+          <MobileNavItem Icon={SearchIcon} label="Search" href="/search" />
+          <MobileNavItem Icon={MessageSquare} label="Inbox" href="/inbox" />
           <MobileNavItem Icon={ShoppingCart} label="Cart" href="/cart" />
           <MobileNavItem Icon={User} label="Profile" href="/vendor" />
         </nav>
